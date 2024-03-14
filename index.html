@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenRouter Client</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src=" https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js">
+    </script>
+</head>
+
+<body class="">
+    <div x-data="app()" x-init="loadFromLocalStorage()" class="max-w-3xl mx-auto p-8">
+        <div class="mt-8">
+            <label for="prompt" class="block text-gray-700 font-bold mb-2">Prompt</label>
+            <textarea id="prompt" x-model="prompt" rows="4"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+        </div>
+        <button @click="submitPrompt()"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4">
+            Submit
+        </button>
+        <div class="mt-4">
+            <h2 class="font-bold mb-2">Response</h2>
+            <template x-if="response">
+                <p x-text="response.choices[0].message.content">>
+                </p>
+                <details class="bg-white shadow overflow-auto border rounded">
+                    <summary class="px-4 py-2 cursor-pointer">View Response</summary>
+                    <pre class="p-4 text-sm"><code x-text="response"></code></pre>
+                </details>
+            </template>
+        </div>
+        <div class="mt-4">
+            <details>
+                <summary>Settings</summary>
+                <label for="model" class="mt-2 block text-gray-700 font-bold mb-2">Model</label>
+                <input type="text" id="model" x-model="model"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <label for="apiKey" class="mt-2 block text-gray-700 font-bold mb-2">API Key</label>
+                <div class="">
+                    <input type="text" id="apiKey" x-model="apiKey"
+                        class="text-xs shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <button @click="saveToLocalStorage()"
+                    class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Update
+                </button>
+            </details>
+        </div>
+    </div>
+
+    <script>
+        function app() {
+            return {
+                apiKey: '',
+                model: '',
+                prompt: '',
+                response: null,
+                loadFromLocalStorage() {
+                    this.apiKey = localStorage.getItem('apiKey') || '';
+                    this.model = localStorage.getItem('model') || '';
+                },
+                saveToLocalStorage() {
+                    localStorage.setItem('apiKey', this.apiKey);
+                    localStorage.setItem('model', this.model);
+                },
+                async submitPrompt() {
+                    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: this.model,
+                            temperatur: 0.9,
+                            messages: [{role: 'user', content: this.prompt}]
+                        })
+                    });
+                    this.response = await response.json();
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
